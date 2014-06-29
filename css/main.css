@@ -55,7 +55,10 @@ a:visited {
 .red {
 	color: red !important;
 }
-
+.bold {
+	font-weight: bold !important;
+	font-size: 130%;
+}
 
 
 #testUl {
