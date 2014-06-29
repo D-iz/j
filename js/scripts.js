@@ -186,9 +186,18 @@ el.after = function (el) {
 	return this.parentNode.insertBefore(el, this.nextSibling);
 }
 
+// el.is = function ( selector ){
+// 	var elements = document.querySelectorAll( selector );
+// 	for( index in elements ){
+// 		if( elements[index] === this ){
+// 			return true;
+// 		}
+// 	}
+// 	return false;
+// }
 
 //.on()
-el.on = function ( type, callback) {
+el.on = function (type, callback) {
 	if (this.addEventListener) {
 		this.addEventListener(type, callback, false);
 	} else if(this.attachEvent) {
@@ -201,15 +210,12 @@ el.on = function ( type, callback) {
 	return this;
 }
 
-// el.is = function ( selector ){
-// 	var elements = document.querySelectorAll( selector );
-// 	for( index in elements ){
-// 		if( elements[index] === this ){
-// 			return true;
-// 		}
-// 	}
-// 	return false;
-// }
+nl.on = function (type, callback) {
+	this.each(function (el) {
+		el.on(type, callback);
+	})
+}
+
 
 
 
