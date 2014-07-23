@@ -200,8 +200,9 @@ el.after = function (el) {
 }
 
 
+//we use Node.prototype here, to add posibility of adding delegate() to document element
 //.on()
-el.on = function (type, callback) {
+window.Node.prototype.on = function (type, callback) {
 	if (this.addEventListener) {
 		this.addEventListener(type, callback, false);
 	} else if(this.attachEvent) {
@@ -220,14 +221,27 @@ nl.on = function (type, callback) {
 	})
 }
 
+//we use Node.prototype here, to add posibility of adding delegate() to document element
+window.Node.prototype.delegate = function (selector, event, fn) {
+	this.on(event, function (e) {
+		var target = e && e.target || window.event.srcElement;
+		if(target.is(selector)) {
+			fn.call(target, e);
+		}
+	})
+}
+
+
+var t = $('#testUl');
+document.delegate('span','click', function (e) {
+	console.log(e)
+})
 
 
 
 
 
 
-var t = $('.testClass').closest('ul');
-console.log(t)
 
 
 
@@ -238,12 +252,14 @@ console.log(t)
 
 
 
-
-
-
-
-
-
+//if need ie < 9, uncomment this
+// if (!('forEach' in Array.prototype)) {
+// 	Array.prototype.forEach= function(action, that /*opt*/) {
+// 		for (var i= 0, n= this.length; i<n; i++)
+// 			if (i in this)
+// 				action.call(that, this[i], i, this);
+// 	};
+// }
 
 
 //if need has/add/remove class in ie < 10, add polyfill | /*! @source http://purl.eligrey.com/github/classList.js/blob/master/classList.js*/
@@ -316,7 +332,43 @@ console.log(t)
 // 	}
 // };
 
+//using in .html method
+//uncomment only for ie < 9
+// if(!String.prototype.trim){  
+// 	String.prototype.trim = function(){  
+// 		return this.replace(/^\s+|\s+$/g,'');  
+// 	};
+// }
 
+
+//if you need .is() in ie < 9, uncomment this
+// el.is = function (selector) {
+// 	var matchesSelector = this.matches 
+// 			|| this.matchesSelector
+// 			|| this.oMatchesSelector 
+// 			|| this.mozMatchesSelector 
+// 			|| this.webkitMatchesSelector 
+// 			|| this.msMatchesSelector
+// 			|| (function () {
+// 				var target = this,
+// 					elements = $(selector),
+// 					match = false;
+// 				if (elements instanceof NodeList) {
+// 				  elements.forEach(function (el) {
+// 					if (el === target) match = true;
+// 				  });
+// 				} else if (elements === target) {
+// 				  match = true;
+// 				}
+
+// 				return match;
+// 			})
+
+// 	return matchesSelector.call(this, selector);
+// };
+
+
+//old version
 //if you need .is() in ie < 9, uncomment this
 // el.is = function (selector) {
 // 	// http://tanalin.com/en/blog/2012/12/matches-selector-ie8/
@@ -333,13 +385,7 @@ console.log(t)
 // 	return false;
 // };
 
-//using in .html method
-//uncomment only for ie < 9
-// if(!String.prototype.trim){  
-// 	String.prototype.trim = function(){  
-// 		return this.replace(/^\s+|\s+$/g,'');  
-// 	};
-// }
+
 
 
 
