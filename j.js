@@ -21,6 +21,7 @@
 
 	j.fn.init = function (selector) {
 		var query;
+
 		if(typeof selector === 'string') {
 			//detect html input
 			if(selector.charAt(0) === "<" && selector.charAt( selector.length - 1 ) === ">") {
@@ -110,8 +111,6 @@ j.str2dom = function (html) {
 }
 
 
-
-
 //extend function from jQuery
 j.isArray = function(a){return j.type(a)==="array"};
 j.isFunction = function(a){return j.type(a)=="function"};
@@ -185,15 +184,6 @@ j.extend = function(){
 };
 
 
-
-
-
-
-
-
-
-
-
 //(string|dom element|query|j collection)
 j.fn.add = function (selector) {
 	var newCollection = [],
@@ -263,9 +253,6 @@ j.fn.css = function (prop, value) {
 		}
 	}
 }
-
-
-
 
 j.fn.html = function (html) {
 	if(html) {
@@ -359,7 +346,7 @@ j.fn.find = function (selector) {
 	return j(newArray);
 }
 
-//el  sholud be dom element
+//el sholud be dom element
 j.inArray = function (arr, el) {
 	if(!el) return this;
 
@@ -371,7 +358,6 @@ j.inArray = function (arr, el) {
 	}
 	return -1;
 }
-
 //for closest method we need j.inQuery
 j.fn.closest = function (selector) {
 	var closestArr = [],
@@ -382,10 +368,6 @@ j.fn.closest = function (selector) {
 			closestArr.push(this[i])
 		} else {
 			parent = this[i].parentNode;
-			// while( parent.tagName !== 'HTML') {
-			// 	if(j.match(parent, selector)) closestArr.push(parent);
-			// 	parent = parent.parentNode;
-			// }
 			while( parent.tagName !== 'HTML') {
 				if(j.match(parent, selector) && j.inArray(closestArr, parent) === -1) closestArr.push(parent);
 				parent = parent.parentNode;
@@ -400,62 +382,16 @@ j.fn.closest = function (selector) {
 
 
 
-j.fn.val = function (value) {
-	if(value) {
-		return this.each(function () {
-			this.value = value;
-		})
-	} else {
-		return this[0].value;
-	}
-}
 
-//work same as in jquery
-j.fn.index =  function (selector) {
-	var that = this;
-	if(selector) {
-		var r;
-		if(selector.nodeType || selector instanceof j) {
-			var newSelector;
-			(selector.nodeType) ? newSelector = selector : newSelector = selector[0];
-			this.each(function (i) {
-				if(this === newSelector) {
-					r = i;
-					return false;
-				} else {
-					r = -1;
-				}
-			})
-		} else if(typeof selector === 'string') {
-			var queryFrom;
-			(typeof selector === 'string') ? queryFrom = $(selector) : queryFrom = selector;
 
-			queryFrom.each(function (i) {
-				if(that[0] === this) {
-					r = i;
-					return false;
-				}
-			})
-		}
-		return r;
-		
-	} else {//position relative to its sibling elements
-		var el = this[0],
-			i = 0;
-		while ((el = el.previousSibling) !== null) {
-		    if (el.nodeType === 1) i++;
-		}
-		return i;
-	}
-}
+
+
 
 //Remove the set of matched elements from the DOM.
 j.fn.remove = function () {
-	this.each(function () {
+	return this.each(function () {
 		if(this.parentNode) this.parentNode.removeChild(this);
 	})
-
-	return this;
 }
 
 //simple cloning
@@ -526,6 +462,13 @@ j.fn.appendTo = function (content, clone) {
 }
 
 
+
+
+
+
+
+
+
 //data methods
 //Store arbitrary data associated with the matched elements or return the value at the named data store for the first element in the set of matched elements.
 j._toDashed = function (str) {
@@ -533,13 +476,11 @@ j._toDashed = function (str) {
 		return "-" + u.toLowerCase();
 	});
 }
-
 j._toCamel = function (str) {
 	return str.replace(/-+(.)?/g, function(match, chr){ 
 		return chr ? chr.toUpperCase() : '' 
 	})
 }
-
 //need methods: j._toDashed, j._toCamel
 j.fn.data = function (name, value) {
 	var mode,
@@ -602,7 +543,6 @@ j.fn.data = function (name, value) {
 	}
 	return r;
 }
-
 //Remove a previously-stored piece of data. (space-separated string naming the pieces of data to delete)
 //need methods: j._toDashed, j._toCamel
 j.fn.removeData = function(name) {
@@ -709,27 +649,6 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 j.fn.on = function (type, fn) {
 	return this.each(function () {
 		
@@ -753,10 +672,6 @@ j.fn.on = function (type, fn) {
 
 		this.addEventListener( type, obj, false );
 	})
-
-	// return this.each(function () {
-	// 	this.addEventListener( type, fn, false );
-	// })
 }
 
 j.fn.delegate = function (selector, event, fn) {
@@ -802,14 +717,6 @@ j.fn.triggerHandler = function (type, data) {
 
 
 
-// window.Node.prototype.delegate = function (selector, event, fn) {
-// 	this.on(event, function (e) {
-// 		var target = e && e.target || window.event.srcElement;
-// 		if(target.is(selector)) {
-// 			fn.call(target, e);
-// 		}
-// 	})
-// }
 
 
 
@@ -817,35 +724,54 @@ j.fn.triggerHandler = function (type, data) {
 
 
 
+j.fn.val = function (value) {
+	if(value) {
+		return this.each(function () {
+			this.value = value;
+		})
+	} else {
+		return this[0].value;
+	}
+}
 
+//work same as in jquery
+j.fn.index =  function (selector) {
+	var that = this;
+	if(selector) {
+		var r;
+		if(selector.nodeType || selector instanceof j) {
+			var newSelector;
+			(selector.nodeType) ? newSelector = selector : newSelector = selector[0];
+			this.each(function (i) {
+				if(this === newSelector) {
+					r = i;
+					return false;
+				} else {
+					r = -1;
+				}
+			})
+		} else if(typeof selector === 'string') {
+			var queryFrom;
+			(typeof selector === 'string') ? queryFrom = $(selector) : queryFrom = selector;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+			queryFrom.each(function (i) {
+				if(that[0] === this) {
+					r = i;
+					return false;
+				}
+			})
+		}
+		return r;
+		
+	} else {//position relative to its sibling elements
+		var el = this[0],
+			i = 0;
+		while ((el = el.previousSibling) !== null) {
+		    if (el.nodeType === 1) i++;
+		}
+		return i;
+	}
+}
 
 j.fn.not = function (selector) {
 	var neededElements = [];
@@ -869,7 +795,6 @@ j.fn.focus = function () {
 j.fn.first = function () {//.first() method constructs a new j object from the first element in that set
 	return j(this[0]);
 }
-
 
 //works only as getter
 j.fn._scroll = function (dir) {
@@ -902,8 +827,6 @@ j.fn.scrollTop = function () {
 j.fn.scrollLeft = function () {
 	return j.fn._scroll.call(this, 'x');
 }
-
-
 
 j.fn.transform = function (transform) {
 	return this.each(function () {
