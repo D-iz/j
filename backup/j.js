@@ -22,7 +22,7 @@
 	j.fn.init = function (selector) {
 		var query;
 
-		if(typeof selector === 'string' && selector.length > 0) {
+		if(typeof selector === 'string') {
 			//detect html input
 			if(selector.charAt(0) === "<" && selector.charAt( selector.length - 1 ) === ">") {
 				(j.str2dom) ? query = j.str2dom(selector) : query = [];
@@ -53,7 +53,7 @@
 
 	j.fn.each = function (callback) {
 		for (var i = 0, l = this.length; i < l ;i++) {
-			if (callback.call(this[i], i, this[i]) === false) break;
+			if (callback.call(this[i], i) === false) break;
 		}
 		return this;
 	}
@@ -674,7 +674,6 @@ j.fn.on = function (type, fn) {
 		var obj = {
 			handleEvent: function (e) {
 				e = e || window.event;
-				
 				var args;
 
 				if(e.data && e.data.length) {
@@ -696,39 +695,15 @@ j.fn.on = function (type, fn) {
 
 j.fn.delegate = function (selector, event, fn) {
 	return this.each(function (i) {
-		var parent = this;
-
 		$(this).on(event, function (e) {
 			var target = e && e.target || window.event.srcElement;
 
-			//normalize
-			if(!e.path) {
-				e.path = [];
-				var node = e.target;
-				while(node != document) {//check for sdocument - fix for chrome, as he uses native path that contain document el
-					e.path.push(node);
-					node = node.parentNode;
-				}
+			if(j.match(target,selector)) {
+				fn.call(target, e);
 			}
-
-			for (var i = 0, l = e.path.length; i < l ;i++) {
-				if(e.path[i] === parent) break;//don't check all dom
-				if(e.path[i] !== document && j.match(e.path[i], selector)) {
-					fn.call(e.path[i], e);
-					break;//if we find needed el, don't need to check all other dom elements
-				}
-			}
-
-			// if(j.match(target,selector)) {
-			// 	fn.call(target, e);
-			// }
 		})
-
 	})
 }
-
-
-
 
 j.fn.off = function (type, fn) {
 	return this.each(function () {
