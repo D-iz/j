@@ -320,10 +320,10 @@ j.fn.is = function (selector) {
 			var el = this;
 
 			for (i = 0; i < compare.length; i++) {
-			    if (el === compare[i]) {
-			    	r = true;
-			    	return false;
-			    }
+				if (el === compare[i]) {
+					r = true;
+					return false;
+				}
 			}
 
 		})
@@ -668,97 +668,208 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 
 
 
-j.fn.on = function (type, fn) {
+j.fn.on = function (types, selector, data, fn, one) {//one - internal
+	var origFn;
+	if ( data == null && fn == null ) {
+		fn = selector;
+		data = selector = undefined;
+	} else if ( fn == null ) {
+		if ( typeof selector === "string" ) {
+			// ( types, selector, fn )
+			fn = data;
+			data = undefined;
+		} else {
+			// ( types, data, fn )
+			fn = data;
+			data = selector;
+			selector = undefined;
+		}
+	}
+
+	if ( fn === false ) {
+		fn = function () {
+			return false;
+		};
+	} else if ( !fn ) {
+		return this;
+	}
+
+	function fixEvent(e, data) {
+		//add data
+		if(data) e.data = data;
+
+		//fix path
+		if(!e.path) {
+			e.path = [];
+			var node = e.target;
+			while(node != document) {//check for document - fix for chrome, as he uses native path that contain document el
+				e.path.push(node);
+				node = node.parentNode;
+			}
+		}
+
+		// Support: Safari 6.0+, Chrome<28
+		// Target should not be a text node (# 504, # 13143)
+		if ( e.target.nodeType === 3 ) {
+			e.target = e.target.parentNode;
+		}
+
+
+		//normalize which form jQuery
+		var	rkeyEvent = /^key/,
+			rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
+
+		if(rkeyEvent.test(e.type)) {//if this is key event
+			if (e.which == null) {
+				e.which = e.charCode != null ? e.charCode : e.keyCode;
+			}
+		} else if(rmouseEvent.test(e.type)) {
+			if (!e.which && e.button !== undefined ) {
+				e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
+			}
+		}
+
+		return e;
+	}
+
+	//todo доделать ивенты к любым объектам
+	// var isNode;
+	// isNode = 'nodeType' in this || 'nodeName' in this;
 	return this.each(function () {
-		
-		var obj = {
-			handleEvent: function (e) {
-				e = e || window.event;
-				e = fixEvent(e);
+		var events = types.split(' ');
 
-				var args;
+		//use usual addListener
+		if(!selector) {
+			var parent = this;
 
-				if(e.data && e.data.length) {
-					args = e.data.slice(0)
-					args.unshift(e);
-				} else {
-					args = [e];
+			//set handler for each event
+			for (var i = 0, l = events.length; i < l ;i++) {
+				if (!this._events) this._events = {};
+				if (!this._events[events[i]]) this._events[events[i]] = [];
+
+				var obj = {
+					handleEvent: function (e) {
+						e = e || window.event;
+						e = fixEvent(e, data);
+
+						var args;
+
+						if(e.data && e.data.length) {
+							args = e.data.slice(0)
+							args.unshift(e);
+						} else {
+							args = [e];
+						}
+
+						fn.apply(e.target, args);
+
+						if(one) $(parent).off(e.type, fn);
+					}
 				}
 
-				
-				fn.handler = obj;
-				fn.apply(e.target, args);
+				obj.orig = fn;
+
+				this._events[events[i]].push(obj);
+
+				this.addEventListener( events[i], obj, false );
+			}
+		} else {
+			//use delegate listener
+
+			var parent = this;
+
+			//set handler for each event
+			for (var i = 0, l = events.length; i < l ;i++) {
+				if (!this._events) this._events = {};
+				if (!this._events[events[i]]) this._events[events[i]] = [];
+
+
+				var obj = {
+					handleEvent: function (e) {
+						e = e || window.event;
+						e = fixEvent(e, data);
+
+						var target = e.target,
+							evt = events[i];
+
+						var args;
+
+						if(e.data && e.data.length) {
+							args = e.data.slice(0)
+							args.unshift(e);
+						} else {
+							args = [e];
+						}
+
+						for (var k = 0, l = e.path.length; k < l ;k++) {
+							if(e.path[k] === parent) break;//don't check all dom
+							if(e.path[k] !== document && j.match(e.path[k], selector)) {
+								fn.apply(e.path[k], args);
+
+								if(one) $(parent).off(e.type, fn);
+								break;//if we find needed el, don't need to check all other dom elements
+							}
+						}
+
+						
+					}
+				}
+
+				obj.orig = fn;
+
+				this._events[events[i]].push(obj);
+
+				this.addEventListener( events[i], obj, false );
 			}
 		}
 
-		function fixEvent(e) {
-			//fix path
-			if(!e.path) {
-				e.path = [];
-				var node = e.target;
-				while(node != document) {//check for sdocument - fix for chrome, as he uses native path that contain document el
-					e.path.push(node);
-					node = node.parentNode;
-				}
-			}
 
-			// Support: Safari 6.0+, Chrome<28
-			// Target should not be a text node (#504, #13143)
-			if ( e.target.nodeType === 3 ) {
-				e.target = e.target.parentNode;
-			}
-
-
-			//normalize which form jQuery
-			var	rkeyEvent = /^key/,
-				rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
-
-			if(rkeyEvent.test(e.type)) {//if this is key event
-				if (e.which == null || e.which == undefined) {
-					e.which = e.charCode != null ? e.charCode : e.keyCode;
-				}
-			} else if(rmouseEvent.test(e.type)) {
-				if (!e.which && e.button !== undefined ) {
-					e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
-				}
-			}
-
-			return e;
-		}
-
-		this.addEventListener( type, obj, false );
+		return this._events;
 	})
+	
 }
 
-j.fn.delegate = function (selector, event, fn) {
-	return this.each(function (i) {
-		var parent = this;
-
-		$(this).on(event, function (e) {
-			var target = e && e.target || window.event.srcElement;
-
-			for (var i = 0, l = e.path.length; i < l ;i++) {
-				if(e.path[i] === parent) break;//don't check all dom
-				if(e.path[i] !== document && j.match(e.path[i], selector)) {
-					fn.call(e.path[i], e);
-					break;//if we find needed el, don't need to check all other dom elements
-				}
-			}
-
-			// if(j.match(target,selector)) {
-			// 	fn.call(target, e);
-			// }
-		})
-
-	})
+j.fn.one = function (types, selector, data, fn) {
+	this.on(types, selector, data, fn, 1);
 }
-
-
-
 
 j.fn.off = function (type, fn) {
 	return this.each(function () {
-		this.removeEventListener( type, fn.handler, false );
+		if (!this._events) return;
+		if (!this._events[type]) return;
+
+		var _events = this._events,
+			findedIndex;
+
+		for (var i = 0, l = _events[type].length; i < l ;i++) {
+			if(_events[type][i].orig === fn) {
+				findedIndex = i;
+			}
+		}
+
+		//removeListener
+		this.removeEventListener( type, _events[type][findedIndex], false );
+		//removeInfo form internal data
+		this._events[type].splice(findedIndex, 1);
+
+
+		//todo, сделать возможность удалять дистенер, без указания функции
+		//это доделать и сделать namespace
+		// 
+		// //we bind not original function, so now we need to find it in internal storage with handlers
+		// handler:
+		// for (var key in _events) {
+		// 	if (_events.hasOwnProperty(key)) {
+		// 		for (var i = 0, l = _events[key].length; i < l ;i++) {
+		// 			if(_events[key][i].orig === fn) {
+		// 				findedKey = key;
+		// 				findedIndex = i;
+		// 				break handler;
+		// 			}
+		// 		}
+		// 	}
+		// }
+		// this.removeEventListener( type, _events[findedKey][findedIndex], false );
 	})
 }
 
@@ -837,7 +948,7 @@ j.fn.index =  function (selector) {
 		var el = this[0],
 			i = 0;
 		while ((el = el.previousSibling) !== null) {
-		    if (el.nodeType === 1) i++;
+			if (el.nodeType === 1) i++;
 		}
 		return i;
 	}
