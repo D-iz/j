@@ -669,7 +669,6 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 
 
 j.fn.on = function (types, selector, data, fn, one) {//one - internal
-	var origFn;
 	if ( data == null && fn == null ) {
 		fn = selector;
 		data = selector = undefined;
@@ -736,21 +735,30 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 	// var isNode;
 	// isNode = 'nodeType' in this || 'nodeName' in this;
 	return this.each(function () {
-		var events = types.split(' ');
+		var events = types.split(' '),
+
+			parent = this,
+			tmp,
+			type,
+			namespaces;
 
 		//use usual addListener
 		if(!selector) {
-			var parent = this;
-
 			//set handler for each event
 			for (var i = 0, l = events.length; i < l ;i++) {
+				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || []
+				type = tmp[1];
+				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+
+
 				if (!this._events) this._events = {};
-				if (!this._events[events[i]]) this._events[events[i]] = [];
+				if (!this._events[type]) this._events[type] = [];
 
 				var obj = {
 					handleEvent: function (e) {
 						e = e || window.event;
 						e = fixEvent(e, data);
+						e.handleObj = this;
 
 						var args;
 
@@ -767,31 +775,38 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 					}
 				}
 
-				obj.orig = fn;
+				obj.type = type;
+				obj.data = data;
+				obj.handler = fn;
+				obj.selector = selector;
+				obj.namespace = namespaces;
+				// obj.namespace = namespaces.join(".");
 
-				this._events[events[i]].push(obj);
+				
 
-				this.addEventListener( events[i], obj, false );
+				this._events[type].push(obj);
+
+				this.addEventListener( type, obj, false );
 			}
 		} else {
 			//use delegate listener
-
-			var parent = this;
-
 			//set handler for each event
 			for (var i = 0, l = events.length; i < l ;i++) {
+				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || []
+				type = tmp[1];
+				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+
+
 				if (!this._events) this._events = {};
-				if (!this._events[events[i]]) this._events[events[i]] = [];
+				if (!this._events[type]) this._events[type] = [];
 
 
 				var obj = {
 					handleEvent: function (e) {
 						e = e || window.event;
 						e = fixEvent(e, data);
-
-						var target = e.target,
-							evt = events[i];
-
+						e.handleObj = this;
+						
 						var args;
 
 						if(e.data && e.data.length) {
@@ -815,11 +830,16 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 					}
 				}
 
-				obj.orig = fn;
+				obj.type = type;
+				obj.data = data;
+				obj.handler = fn;
+				obj.selector = selector;
+				obj.namespace = namespaces;
+				// obj.namespace = namespaces.join(".");
 
-				this._events[events[i]].push(obj);
+				this._events[type].push(obj);
 
-				this.addEventListener( events[i], obj, false );
+				this.addEventListener( type, obj, false );
 			}
 		}
 
@@ -842,7 +862,7 @@ j.fn.off = function (type, fn) {
 			findedIndex;
 
 		for (var i = 0, l = _events[type].length; i < l ;i++) {
-			if(_events[type][i].orig === fn) {
+			if(_events[type][i].handler === fn) {
 				findedIndex = i;
 			}
 		}
@@ -861,7 +881,7 @@ j.fn.off = function (type, fn) {
 		// for (var key in _events) {
 		// 	if (_events.hasOwnProperty(key)) {
 		// 		for (var i = 0, l = _events[key].length; i < l ;i++) {
-		// 			if(_events[key][i].orig === fn) {
+		// 			if(_events[key][i].handler === fn) {
 		// 				findedKey = key;
 		// 				findedIndex = i;
 		// 				break handler;
