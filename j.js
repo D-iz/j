@@ -865,86 +865,53 @@ j.fn.off = function (types, fn) {
 			//detect namespaces
 			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
 
-
-			function removeListener(type) {
-				
-			}
-
 			if(type && _events[type]) {//we have type
 				if(namespaces.length) {//we have type and namespaces
-
-					for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {//search on every handler of this type
-
-						for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
-
-							if(_events[type][k] && j.inArray(_events[type][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
-
-								if(!fn || (fn && _events[type][k].handler === fn)) {
-									//remove listener
-									this.removeEventListener( type, _events[type][k], false );
-									//removeInfo from internal data
-									delete _events[type][k];
-								} else {
-									continue;
-								}
-
-								break;
-
-							}
-						}
-
-
-					}
-
+					removeListenerNamespace.call(this, type);
 				} else {//if we have type, but no namespaces
 					for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {
-						if(!fn || (fn && _events[type][k].handler === fn)) {
-							//remove listener
-							this.removeEventListener( type, _events[type][k], false );
-							//removeInfo from internal data
-							delete _events[type][k];
-						} else {
-							continue;
-						}
+						if(removeListener.call(this,type) === false) continue;
 					}
 				}
+				clearEvents(type);
 
-				//clear _events from undefined values
-				_events[type] = _events[type].filter(function(e){return e});
-				//remove empty sections
-				if(!_events[type].length) delete _events[type];
 			} else {//no type
 				for (var ev in _events) {
 					if (_events.hasOwnProperty(ev)) {
-
-						for (var k = 0, l2 = _events[ev].length; k < l2 ;k++) {//search on every handler of this type
-
-							for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
-
-								if(_events[ev][k] && j.inArray(_events[ev][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
-
-									if(!fn || (fn && _events[ev][k].handler === fn)) {
-										//remove listener
-										this.removeEventListener( ev, _events[ev][k], false );
-										//removeInfo from internal data
-										delete _events[ev][k];
-									} else {
-										continue;
-									}
-
-									break;
-
-								}
-							}
-						}
+						removeListenerNamespace.call(this, ev);
 					}
-
-					//clear _events from undefined values
-					_events[ev] = _events[ev].filter(function(e){return e});
-					//remove empty sections
-					if(!_events[ev].length) delete _events[ev];
+					clearEvents(ev);
 				}
 			}
+		}
+
+		function removeListenerNamespace(type) {
+			for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {//search on every handler of this type
+				for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
+					if(_events[type][k] && j.inArray(_events[type][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
+						if(removeListener.call(this,type,k) === false) continue;
+						break;
+					}
+				}
+			}
+		}
+
+		function removeListener(type, k) {
+			if(!fn || (fn && _events[type][k].handler === fn)) {
+				//remove listener
+				this.removeEventListener( type, _events[type][k], false );
+				//removeInfo from internal data
+				delete _events[type][k];
+			} else {
+				return false;
+			}
+		}
+
+		function clearEvents(type) {
+			//clear _events from undefined values
+			_events[type] = _events[type].filter(function(e){return e});
+			//remove empty sections
+			if(!_events[type].length) delete _events[type];
 		}
 
 		
