@@ -758,7 +758,22 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 		var parent = this,
 			tmp,
 			type,
+			bindType,
 			namespaces;
+
+
+		function handleFunction(e, args) {
+			if(type === 'mouseenter' || type === 'mouseleave') {
+				var related = e.relatedTarget,
+					parent = e.handleObj.el || e.handleObj.delegateTarget;
+
+				if(!related || (related !== parent && !parent.contains(related))) {
+					fn.apply(e.target, args);
+
+					if(one) $(parent).off(e.type, fn);
+				}
+			}
+		}
 
 		//use usual addListener
 		if(!selector) {
@@ -768,10 +783,22 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				type = tmp[1];
 				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
 
+				bindType = type;
+
+				if(type === 'mouseenter') {
+					namespaces.push('_mouseenter')
+					bindType = 'mouseover'
+				}
+				if(type === 'mouseleave') {
+					namespaces.push('_mouseleave')
+					bindType = 'mouseout'
+				}
+
 				if (!this._events) this._events = {};
 				if (!this._events[type]) this._events[type] = [];
 
 				var obj = {
+					delegateTarget: parent,
 					handleEvent: function (e) {
 						e = e || window.event;
 						e = fixEvent(e, data);
@@ -786,9 +813,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 							args = [e];
 						}
 
-						fn.apply(e.target, args);
-
-						if(one) $(parent).off(e.type, fn);
+						handleFunction(e, args);
 					}
 				}
 
@@ -797,11 +822,11 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				obj.handler = fn;
 				obj.selector = selector;
 				obj.namespace = namespaces;
-			
+
 
 				this._events[type].push(obj);
 
-				this.addEventListener( type, obj, false );
+				this.addEventListener(bindType, obj, false );
 			}
 		} else {//delegate listener
 			//set handler for each event
@@ -810,12 +835,23 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				type = tmp[1];
 				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
 
+				bindType = type;
+
+				if(type === 'mouseenter') {
+					namespaces.push('_mouseenter')
+					bindType = 'mouseover'
+				}
+				if(type === 'mouseleave') {
+					namespaces.push('_mouseleave')
+					bindType = 'mouseout'
+				}
 
 				if (!this._events) this._events = {};
 				if (!this._events[type]) this._events[type] = [];
 
 
 				var obj = {
+					delegateTarget: parent,
 					handleEvent: function (e) {
 						e = e || window.event;
 						e = fixEvent(e, data);
@@ -833,9 +869,9 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 						for (var k = 0, l = e.path.length; k < l ;k++) {
 							if(e.path[k] === parent) break;//don't check all dom
 							if(e.path[k] !== document && j.match(e.path[k], selector)) {
-								fn.apply(e.path[k], args);
+								obj.el = e.path[k];
 
-								if(one) $(parent).off(e.type, fn);
+								handleFunction(e, args);
 								break;//if we find needed el, don't need to check all other dom elements
 							}
 						}
@@ -850,13 +886,13 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				obj.selector = selector;
 				obj.namespace = namespaces;
 
+
 				this._events[type].push(obj);
 
-				this.addEventListener( type, obj, false );
+				this.addEventListener( bindType, obj, false );
 			}
 		}
 	})
-	
 }
 
 j.fn.one = function (types, selector, data, fn) {
@@ -874,14 +910,23 @@ j.fn.off = function (types, fn) {
 			namespaces;
 		if (!_events) return;
 
-
 		for (var i = 0, l = events.length; i < l ;i++) {
 			tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
-
 			//detect current type
 			type = tmp[1];
 			//detect namespaces
 			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+
+			var removeType = type;
+			if(type === 'mouseenter') {
+				namespaces.push('_mouseenter')
+				removeType = 'mouseover'
+			}
+
+			if(type === 'mouseleave') {
+				namespaces.push('_mouseleave')
+				removeType = 'mouseout'
+			}
 
 			if(type && _events[type]) {//we have type
 				if(namespaces.length) {//we have type and namespaces
@@ -917,7 +962,7 @@ j.fn.off = function (types, fn) {
 		function removeListener(type, k) {
 			if(!fn || (fn && _events[type][k].handler === fn)) {
 				//remove listener
-				this.removeEventListener( type, _events[type][k], false );
+				this.removeEventListener( removeType, _events[type][k], false );
 				//removeInfo from internal data
 				delete _events[type][k];
 			} else {
