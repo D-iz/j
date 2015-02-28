@@ -669,7 +669,6 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 
 
 j.fn.on = function (types, selector, data, fn, one) {//one - internal
-
 	//set proper links to variables, depends on how much arguments were passed
 	if ( data == null && fn == null ) {
 		fn = selector;
@@ -703,7 +702,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 		if(!e.path) {
 			e.path = [];
 			var node = e.target;
-			while(node != document) {//check for document - fix for chrome, as he uses native path that contain document el
+			while(node != document) {//check for document - fix for chrome, as chrome used native path that contain document el
 				e.path.push(node);
 				node = node.parentNode;
 			}
@@ -724,7 +723,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 			if (e.which == null) {
 				e.which = e.charCode != null ? e.charCode : e.keyCode;
 			}
-		} else if(rmouseEvent.test(e.type)) {
+		} else if(rmouseEvent.test(e.type)) {//if this is mouse event
 			if (!e.which && e.button !== undefined ) {
 				e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
 			}
@@ -838,9 +837,6 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				this.addEventListener( type, obj, false );
 			}
 		}
-
-
-		// return this._events;
 	})
 	
 }
@@ -870,6 +866,10 @@ j.fn.off = function (types, fn) {
 			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
 
 
+			function removeListener(type) {
+				
+			}
+
 			if(type && _events[type]) {//we have type
 				if(namespaces.length) {//we have type and namespaces
 
@@ -877,7 +877,7 @@ j.fn.off = function (types, fn) {
 
 						for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
 
-							if(_events[ev][k] && j.inArray(_events[type][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
+							if(_events[type][k] && j.inArray(_events[type][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
 
 								if(!fn || (fn && _events[type][k].handler === fn)) {
 									//remove listener
@@ -916,7 +916,7 @@ j.fn.off = function (types, fn) {
 			} else {//no type
 				for (var ev in _events) {
 					if (_events.hasOwnProperty(ev)) {
-						
+
 						for (var k = 0, l2 = _events[ev].length; k < l2 ;k++) {//search on every handler of this type
 
 							for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
