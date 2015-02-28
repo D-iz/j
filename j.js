@@ -870,7 +870,7 @@ j.fn.off = function (types, fn) {
 					removeListenerNamespace.call(this, type);
 				} else {//if we have type, but no namespaces
 					for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {
-						if(removeListener.call(this,type) === false) continue;
+						if(removeListener.call(this,type,k) === false) continue;
 					}
 				}
 				clearEvents(type);
