@@ -708,11 +708,19 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 		//add data
 		if(data) e.data = data;
 
+
+		//normalize relatedTarget
+		if (!e.relatedTarget) {
+			if (e.type == 'mouseover') e.relatedTarget = e.fromElement;
+			if (e.type == 'mouseout') e.relatedTarget = e.toElement;
+		}
+
 		//fix path
 		if(!e.path) {
 			e.path = [];
 			var node = e.target;
-			while(node != document) {//check for document - fix for chrome, as chrome used native path that contain document el
+			// while(node != document) {//check for document - fix for chrome, as chrome used native path that contain document el
+			while(node) {
 				e.path.push(node);
 				node = node.parentNode;
 			}
