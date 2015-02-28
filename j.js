@@ -183,6 +183,19 @@ j.extend = function(){
 	return target;
 };
 
+//el sholud be dom element
+j.inArray = function (arr, el) {
+	if(!el) return this;
+
+	for (var i = 0, l = arr.length; i < l ;i++) {
+		if(arr[i] === el) {
+			return i;
+			break
+		}
+	}
+	return -1;
+}
+
 
 //(string|dom element|query|j collection)
 j.fn.add = function (selector) {
@@ -365,18 +378,8 @@ j.fn.children = function (selector) {
 	return j(newArray);
 }
 
-//el sholud be dom element
-j.inArray = function (arr, el) {
-	if(!el) return this;
 
-	for (var i = 0, l = arr.length; i < l ;i++) {
-		if(arr[i] === el) {
-			return i;
-			break
-		}
-	}
-	return -1;
-}
+
 //for closest method we need j.inArray
 j.fn.closest = function (selector) {
 	var closestArr = [],
@@ -644,10 +647,7 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 				r = true;
 				return false;
 			}
-
 		});
-
-		return r;
 	} else {//for ie9
 		this.each(function (i) {
 			if(this.className.indexOf(name) > -1) {
@@ -655,8 +655,8 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 				return false;
 			}
 		})
-		return r;
 	}
+	return r;
 }
 
 
@@ -664,8 +664,18 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 
 
 
+//old, simple methods
+// j.fn.on = function (type, fn) {
+// 	return this.each(function () {
+// 		this.addEventListener( type, fn, false );
+// 	})
+// }
 
-
+// j.fn.off = function (type, fn) {
+// 	return this.each(function () {
+// 		this.removeEventListener( type, fn, false );
+// 	})
+// }
 
 
 j.fn.on = function (types, selector, data, fn, one) {//one - internal
@@ -919,7 +929,7 @@ j.fn.off = function (types, fn) {
 }
 
 
-//todo, make trigger for old ie
+//todo, change trigger methods, because of using old implementation
 j.fn.trigger = function (type, data) {
 	return this.each(function (i) {
 		var event = document.createEvent('HTMLEvents');
@@ -1055,23 +1065,23 @@ j.fn.scrollLeft = function () {
 	return j.fn._scroll.call(this, 'x');
 }
 
-j.fn.transform = function (transform) {
-	return this.each(function () {
-		var elStyle = this.style;
-		elStyle.webkitTransform = elStyle.MsTransform = elStyle.msTransform = elStyle.MozTransform = elStyle.OTransform = elStyle.transform = transform;
-	})
-}
+// j.fn.transform = function (transform) {
+// 	return this.each(function () {
+// 		var elStyle = this.style;
+// 		elStyle.webkitTransform = elStyle.MsTransform = elStyle.msTransform = elStyle.MozTransform = elStyle.OTransform = elStyle.transform = transform;
+// 	})
+// }
 
-j.fn.transition = function (duration) {
-	if (typeof duration !== 'string') {
-		duration = duration + 'ms';
-	}
+// j.fn.transition = function (duration) {
+// 	if (typeof duration !== 'string') {
+// 		duration = duration + 'ms';
+// 	}
 
-	return this.each(function () {
-		var elStyle = this.style;
-		elStyle.webkitTransitionDuration = elStyle.MsTransitionDuration = elStyle.msTransitionDuration = elStyle.MozTransitionDuration = elStyle.OTransitionDuration = elStyle.transitionDuration = duration;
-	});
-}
+// 	return this.each(function () {
+// 		var elStyle = this.style;
+// 		elStyle.webkitTransitionDuration = elStyle.MsTransitionDuration = elStyle.msTransitionDuration = elStyle.MozTransitionDuration = elStyle.OTransitionDuration = elStyle.transitionDuration = duration;
+// 	});
+// }
 
 
 
