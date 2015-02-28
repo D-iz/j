@@ -377,7 +377,7 @@ j.inArray = function (arr, el) {
 	}
 	return -1;
 }
-//for closest method we need j.inQuery
+//for closest method we need j.inArray
 j.fn.closest = function (selector) {
 	var closestArr = [],
 		parent;
@@ -669,6 +669,8 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 
 
 j.fn.on = function (types, selector, data, fn, one) {//one - internal
+
+	//set proper links to variables, depends on how much arguments were passed
 	if ( data == null && fn == null ) {
 		fn = selector;
 		data = selector = undefined;
@@ -731,13 +733,12 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 		return e;
 	}
 
+	var events = types.split(' ');
 	//todo доделать ивенты к любым объектам
 	// var isNode;
 	// isNode = 'nodeType' in this || 'nodeName' in this;
 	return this.each(function () {
-		var events = types.split(' '),
-
-			parent = this,
+		var parent = this,
 			tmp,
 			type,
 			namespaces;
@@ -746,10 +747,9 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 		if(!selector) {
 			//set handler for each event
 			for (var i = 0, l = events.length; i < l ;i++) {
-				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || []
+				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
 				type = tmp[1];
 				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
-
 
 				if (!this._events) this._events = {};
 				if (!this._events[type]) this._events[type] = [];
@@ -780,19 +780,16 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				obj.handler = fn;
 				obj.selector = selector;
 				obj.namespace = namespaces;
-				// obj.namespace = namespaces.join(".");
-
-				
+			
 
 				this._events[type].push(obj);
 
 				this.addEventListener( type, obj, false );
 			}
-		} else {
-			//use delegate listener
+		} else {//delegate listener
 			//set handler for each event
 			for (var i = 0, l = events.length; i < l ;i++) {
-				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || []
+				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
 				type = tmp[1];
 				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
 
@@ -835,7 +832,6 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				obj.handler = fn;
 				obj.selector = selector;
 				obj.namespace = namespaces;
-				// obj.namespace = namespaces.join(".");
 
 				this._events[type].push(obj);
 
@@ -844,7 +840,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 		}
 
 
-		return this._events;
+		// return this._events;
 	})
 	
 }
@@ -853,45 +849,108 @@ j.fn.one = function (types, selector, data, fn) {
 	this.on(types, selector, data, fn, 1);
 }
 
-j.fn.off = function (type, fn) {
+//for off method we need j.inArray
+j.fn.off = function (types, fn) {
+	var events = types.split(' ');
+
 	return this.each(function () {
-		if (!this._events) return;
-		if (!this._events[type]) return;
-
 		var _events = this._events,
-			findedIndex;
+			tmp,
+			type,
+			namespaces;
+		if (!_events) return;
 
-		for (var i = 0, l = _events[type].length; i < l ;i++) {
-			if(_events[type][i].handler === fn) {
-				findedIndex = i;
+
+		for (var i = 0, l = events.length; i < l ;i++) {
+			tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
+
+			//detect current type
+			type = tmp[1];
+			//detect namespaces
+			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+
+
+			if(type && _events[type]) {//we have type
+				if(namespaces.length) {//we have type and namespaces
+
+					for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {//search on every handler of this type
+
+						for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
+
+							if(_events[ev][k] && j.inArray(_events[type][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
+
+								if(!fn || (fn && _events[type][k].handler === fn)) {
+									//remove listener
+									this.removeEventListener( type, _events[type][k], false );
+									//removeInfo from internal data
+									delete _events[type][k];
+								} else {
+									continue;
+								}
+
+								break;
+
+							}
+						}
+
+
+					}
+
+				} else {//if we have type, but no namespaces
+					for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {
+						if(!fn || (fn && _events[type][k].handler === fn)) {
+							//remove listener
+							this.removeEventListener( type, _events[type][k], false );
+							//removeInfo from internal data
+							delete _events[type][k];
+						} else {
+							continue;
+						}
+					}
+				}
+
+				//clear _events from undefined values
+				_events[type] = _events[type].filter(function(e){return e});
+				//remove empty sections
+				if(!_events[type].length) delete _events[type];
+			} else {//no type
+				for (var ev in _events) {
+					if (_events.hasOwnProperty(ev)) {
+						
+						for (var k = 0, l2 = _events[ev].length; k < l2 ;k++) {//search on every handler of this type
+
+							for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
+
+								if(_events[ev][k] && j.inArray(_events[ev][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
+
+									if(!fn || (fn && _events[ev][k].handler === fn)) {
+										//remove listener
+										this.removeEventListener( ev, _events[ev][k], false );
+										//removeInfo from internal data
+										delete _events[ev][k];
+									} else {
+										continue;
+									}
+
+									break;
+
+								}
+							}
+						}
+					}
+
+					//clear _events from undefined values
+					_events[ev] = _events[ev].filter(function(e){return e});
+					//remove empty sections
+					if(!_events[ev].length) delete _events[ev];
+				}
 			}
 		}
 
-		//removeListener
-		this.removeEventListener( type, _events[type][findedIndex], false );
-		//removeInfo form internal data
-		this._events[type].splice(findedIndex, 1);
-
-
-		//todo, сделать возможность удалять дистенер, без указания функции
-		//это доделать и сделать namespace
-		// 
-		// //we bind not original function, so now we need to find it in internal storage with handlers
-		// handler:
-		// for (var key in _events) {
-		// 	if (_events.hasOwnProperty(key)) {
-		// 		for (var i = 0, l = _events[key].length; i < l ;i++) {
-		// 			if(_events[key][i].handler === fn) {
-		// 				findedKey = key;
-		// 				findedIndex = i;
-		// 				break handler;
-		// 			}
-		// 		}
-		// 	}
-		// }
-		// this.removeEventListener( type, _events[findedKey][findedIndex], false );
-	})
+		
+	});
 }
+
 
 //todo, make trigger for old ie
 j.fn.trigger = function (type, data) {
