@@ -762,7 +762,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 			namespaces;
 
 
-		function handleFunction(e, args) {
+		function handleFunction(e, args, type) {
 			if(type === 'mouseenter' || type === 'mouseleave') {
 				var related = e.relatedTarget,
 					parent = e.handleObj.el || e.handleObj.delegateTarget;
@@ -772,6 +772,10 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 
 					if(one) $(parent).off(e.type, fn);
 				}
+			} else {
+				fn.apply(e.target, args);
+
+				if(one) $(parent).off(e.type, fn);
 			}
 		}
 
@@ -813,7 +817,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 							args = [e];
 						}
 
-						handleFunction(e, args);
+						handleFunction(e, args, type);
 					}
 				}
 
@@ -871,7 +875,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 							if(e.path[k] !== document && j.match(e.path[k], selector)) {
 								obj.el = e.path[k];
 
-								handleFunction(e, args);
+								handleFunction(e, args, type);
 								break;//if we find needed el, don't need to check all other dom elements
 							}
 						}
