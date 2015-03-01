@@ -677,6 +677,29 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 // 	})
 // }
 
+//simple delegate method
+// j.fn.delegate = function (selector, event, fn) {
+// 	return this.each(function (i) {
+// 		var parent = this;
+
+// 		$(this).on(event, function (e) {
+// 			var target = e && e.target || window.event.srcElement;
+
+// 			for (var i = 0, l = e.path.length; i < l ;i++) {
+// 				if(e.path[i] === parent) break;//don't check all dom
+// 				if(e.path[i] !== document && j.match(e.path[i], selector)) {
+// 					fn.call(e.path[i], e);
+// 					break;//if we find needed el, don't need to check all other dom elements
+// 				}
+// 			}
+
+// 			// if(j.match(target,selector)) {
+// 			// 	fn.call(target, e);
+// 			// }
+// 		})
+
+// 	})
+// }
 
 j.fn.on = function (types, selector, data, fn, one) {//one - internal
 	//set proper links to variables, depends on how much arguments were passed
@@ -768,108 +791,57 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 					parent = e.handleObj.el || e.handleObj.delegateTarget;
 
 				if(!related || (related !== parent && !parent.contains(related))) {
-					fn.apply(e.target, args);
-
-					if(one) $(parent).off(e.type, fn);
+					fire();
 				}
 			} else {
+				fire();
+			}
+
+			function fire() {
 				fn.apply(e.target, args);
 
 				if(one) $(parent).off(e.type, fn);
 			}
 		}
 
-		//use usual addListener
-		if(!selector) {
-			//set handler for each event
-			for (var i = 0, l = events.length; i < l ;i++) {
-				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
-				type = tmp[1];
-				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+		for (var i = 0, l = events.length; i < l ;i++) {
+			tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
+			type = tmp[1];
+			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
 
-				bindType = type;
+			bindType = type;
 
-				if(type === 'mouseenter') {
-					namespaces.push('_mouseenter')
-					bindType = 'mouseover'
-				}
-				if(type === 'mouseleave') {
-					namespaces.push('_mouseleave')
-					bindType = 'mouseout'
-				}
-
-				if (!this._events) this._events = {};
-				if (!this._events[type]) this._events[type] = [];
-
-				var obj = {
-					delegateTarget: parent,
-					handleEvent: function (e) {
-						e = e || window.event;
-						e = fixEvent(e, data);
-						e.handleObj = this;
-
-						var args;
-
-						if(e.data && e.data.length) {
-							args = e.data.slice(0)
-							args.unshift(e);
-						} else {
-							args = [e];
-						}
-
-						handleFunction(e, args, type);
-					}
-				}
-
-				obj.type = type;
-				obj.data = data;
-				obj.handler = fn;
-				obj.selector = selector;
-				obj.namespace = namespaces;
-
-
-				this._events[type].push(obj);
-
-				this.addEventListener(bindType, obj, false );
+			if(type === 'mouseenter') {
+				namespaces.push('_mouseenter')
+				bindType = 'mouseover'
 			}
-		} else {//delegate listener
-			//set handler for each event
-			for (var i = 0, l = events.length; i < l ;i++) {
-				tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
-				type = tmp[1];
-				tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+			if(type === 'mouseleave') {
+				namespaces.push('_mouseleave')
+				bindType = 'mouseout'
+			}
 
-				bindType = type;
+			if (!this._events) this._events = {};
+			if (!this._events[type]) this._events[type] = [];
 
-				if(type === 'mouseenter') {
-					namespaces.push('_mouseenter')
-					bindType = 'mouseover'
-				}
-				if(type === 'mouseleave') {
-					namespaces.push('_mouseleave')
-					bindType = 'mouseout'
-				}
+			var obj = {
+				delegateTarget: parent,
+				handleEvent: function (e) {
+					e = e || window.event;
+					e = fixEvent(e, data);
+					e.handleObj = this;
 
-				if (!this._events) this._events = {};
-				if (!this._events[type]) this._events[type] = [];
+					var args;
 
+					if(e.data && e.data.length) {
+						args = e.data.slice(0)
+						args.unshift(e);
+					} else {
+						args = [e];
+					}
 
-				var obj = {
-					delegateTarget: parent,
-					handleEvent: function (e) {
-						e = e || window.event;
-						e = fixEvent(e, data);
-						e.handleObj = this;
-						
-						var args;
-
-						if(e.data && e.data.length) {
-							args = e.data.slice(0)
-							args.unshift(e);
-						} else {
-							args = [e];
-						}
-
+					if(!selector) {//usual addEventListener
+						handleFunction(e, args, type);
+					} else {//delegate listener
 						for (var k = 0, l = e.path.length; k < l ;k++) {
 							if(e.path[k] === parent) break;//don't check all dom
 							if(e.path[k] !== document && j.match(e.path[k], selector)) {
@@ -879,22 +851,20 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 								break;//if we find needed el, don't need to check all other dom elements
 							}
 						}
-
-						
 					}
 				}
-
-				obj.type = type;
-				obj.data = data;
-				obj.handler = fn;
-				obj.selector = selector;
-				obj.namespace = namespaces;
-
-
-				this._events[type].push(obj);
-
-				this.addEventListener( bindType, obj, false );
 			}
+
+			obj.type = type;
+			obj.data = data;
+			obj.handler = fn;
+			obj.selector = selector;
+			obj.namespace = namespaces;
+
+
+			this._events[type].push(obj);
+
+			this.addEventListener(bindType, obj, false );
 		}
 	})
 }
