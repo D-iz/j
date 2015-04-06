@@ -22,26 +22,24 @@
 	j.fn.init = function (selector) {
 		var query;
 
-		if(typeof selector === 'string' && selector.length > 0) {
+		if(typeof selector === 'string') {
 			//detect html input
 			if(selector.charAt(0) === "<" && selector.charAt( selector.length - 1 ) === ">") {
 				(j.str2dom) ? query = j.str2dom(selector) : query = [];
 			} else {
 				query = document.querySelectorAll(selector);
 			}
-		} else if(selector instanceof Array || selector instanceof NodeList || selector instanceof HTMLCollection || selector instanceof j) {
+		} else if(selector instanceof Array || selector instanceof NodeList || selector instanceof HTMLCollection || (selector.j && !selector.window)) {
 			query = selector;
 		} else if((window.Node && selector instanceof Node) || selector == selector.window) {
 			query = [selector];
-		} else if(typeof selector === 'function') {
-			query = [document];
-			document.addEventListener("DOMContentLoaded", selector);
 		} else {
 			query = [];
 		}
 
 		//save selector length
 		this.length = query.length;
+		this.j = true;//flag shows that this is j collection
 
 		for (var i = 0, l = this.length; i < l ;i++) {
 			this[i] = query[i];
@@ -55,7 +53,7 @@
 
 	j.fn.each = function (callback) {
 		for (var i = 0, l = this.length; i < l ;i++) {
-			if (callback.call(this[i], i, this[i]) === false) break;
+			if (callback.call(this[i], i) === false) break;
 		}
 		return this;
 	}
@@ -185,24 +183,6 @@ j.extend = function(){
 	return target;
 };
 
-//el sholud be dom element
-j.inArray = function (arr, el) {
-	if(!el) return this;
-
-	for (var i = 0, l = arr.length; i < l ;i++) {
-		if(arr[i] === el) {
-			return i;
-			break
-		}
-	}
-	return -1;
-}
-
-
-//document ready event
-j.fn.ready = function (fn) {
-	document.addEventListener("DOMContentLoaded", fn);
-}
 
 //(string|dom element|query|j collection)
 j.fn.add = function (selector) {
@@ -219,7 +199,7 @@ j.fn.add = function (selector) {
 		newQuery = $(selector);
 	} else if(selector.nodeType || selector === document || selector === window) {
 		newQuery = [selector]
-	} else if(selector instanceof j) {
+	} else if(selector.j && !selector.window) {
 		newQuery = selector;
 	}
 
@@ -290,6 +270,7 @@ j.fn.text = function (text) {
 			this.textContent = text;
 		})
 	} else {
+		// return this.appendChild(document.createTextNode(text));
 		return this[0].textContent.trim() || undefined;
 	}
 }
@@ -339,10 +320,10 @@ j.fn.is = function (selector) {
 			var el = this;
 
 			for (i = 0; i < compare.length; i++) {
-				if (el === compare[i]) {
-					r = true;
-					return false;
-				}
+			    if (el === compare[i]) {
+			    	r = true;
+			    	return false;
+			    }
 			}
 
 		})
@@ -384,9 +365,19 @@ j.fn.children = function (selector) {
 	return j(newArray);
 }
 
+//el sholud be dom element
+j.inArray = function (arr, el) {
+	if(!el) return this;
 
-
-//for closest method we need j.inArray
+	for (var i = 0, l = arr.length; i < l ;i++) {
+		if(arr[i] === el) {
+			return i;
+			break
+		}
+	}
+	return -1;
+}
+//for closest method we need j.inQuery
 j.fn.closest = function (selector) {
 	var closestArr = [],
 		parent;
@@ -653,7 +644,10 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 				r = true;
 				return false;
 			}
+
 		});
+
+		return r;
 	} else {//for ie9
 		this.each(function (i) {
 			if(this.className.indexOf(name) > -1) {
@@ -661,8 +655,8 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 				return false;
 			}
 		})
+		return r;
 	}
-	return r;
 }
 
 
@@ -670,299 +664,54 @@ j.fn.hasClass = function (name) {//if one of elements has this class, return tru
 
 
 
-//old, simple methods
-// j.fn.on = function (type, fn) {
-// 	return this.each(function () {
-// 		this.addEventListener( type, fn, false );
-// 	})
-// }
-
-// j.fn.off = function (type, fn) {
-// 	return this.each(function () {
-// 		this.removeEventListener( type, fn, false );
-// 	})
-// }
-
-//simple delegate method
-// j.fn.delegate = function (selector, event, fn) {
-// 	return this.each(function (i) {
-// 		var parent = this;
-
-// 		$(this).on(event, function (e) {
-// 			var target = e && e.target || window.event.srcElement;
-
-// 			for (var i = 0, l = e.path.length; i < l ;i++) {
-// 				if(e.path[i] === parent) break;//don't check all dom
-// 				if(e.path[i] !== document && j.match(e.path[i], selector)) {
-// 					fn.call(e.path[i], e);
-// 					break;//if we find needed el, don't need to check all other dom elements
-// 				}
-// 			}
-
-// 			// if(j.match(target,selector)) {
-// 			// 	fn.call(target, e);
-// 			// }
-// 		})
-
-// 	})
-// }
-
-j.fn.on = function (types, selector, data, fn, one) {//one - internal
-	//set proper links to variables, depends on how much arguments were passed
-	if ( data == null && fn == null ) {
-		fn = selector;
-		data = selector = undefined;
-	} else if ( fn == null ) {
-		if ( typeof selector === "string" ) {
-			// ( types, selector, fn )
-			fn = data;
-			data = undefined;
-		} else {
-			// ( types, data, fn )
-			fn = data;
-			data = selector;
-			selector = undefined;
-		}
-	}
-
-	if ( fn === false ) {
-		fn = function () {
-			return false;
-		};
-	} else if ( !fn ) {
-		return this;
-	}
-
-	function fixEvent(e, data) {
-		//add data
-		if(data) e.data = data;
 
 
-		//normalize relatedTarget
-		if (!e.relatedTarget) {
-			if (e.type == 'mouseover') e.relatedTarget = e.fromElement;
-			if (e.type == 'mouseout') e.relatedTarget = e.toElement;
-		}
-
-		//fix path
-		if(!e.path) {
-			e.path = [];
-			var node = e.target;
-			// while(node != document) {//check for document - fix for chrome, as chrome used native path that contain document el
-			while(node) {
-				e.path.push(node);
-				node = node.parentNode;
-			}
-		}
-
-		// Support: Safari 6.0+, Chrome<28
-		// Target should not be a text node (# 504, # 13143)
-		if ( e.target.nodeType === 3 ) {
-			e.target = e.target.parentNode;
-		}
 
 
-		//normalize which form jQuery
-		var	rkeyEvent = /^key/,
-			rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
-
-		if(rkeyEvent.test(e.type)) {//if this is key event
-			if (e.which == null) {
-				e.which = e.charCode != null ? e.charCode : e.keyCode;
-			}
-		} else if(rmouseEvent.test(e.type)) {//if this is mouse event
-			if (!e.which && e.button !== undefined ) {
-				e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
-			}
-		}
-
-		return e;
-	}
-
-	var events = types.split(' ');
-	//todo доделать ивенты к любым объектам
-	// var isNode;
-	// isNode = 'nodeType' in this || 'nodeName' in this;
+j.fn.on = function (type, fn) {
 	return this.each(function () {
-		var parent = this,
-			tmp,
-			type,
-			bindType,
-			namespaces;
+		
+		var obj = {
+			handleEvent: function (e) {
+				e = e || window.event;
+				var args;
 
-
-		function handleFunction(e, args, type) {
-			if(type === 'mouseenter' || type === 'mouseleave') {
-				var related = e.relatedTarget,
-					parent = e.handleObj.el || e.handleObj.delegateTarget;
-
-				if(!related || (related !== parent && !parent.contains(related))) {
-					fire();
+				if(e.data && e.data.length) {
+					args = e.data.slice(0)
+					args.unshift(e);
+				} else {
+					args = [e];
 				}
-			} else {
-				fire();
-			}
 
-			function fire() {
+				
+				fn.handler = obj;
 				fn.apply(e.target, args);
-
-				if(one) $(parent).off(e.type, fn);
 			}
 		}
 
-		for (var i = 0, l = events.length; i < l ;i++) {
-			tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
-			type = tmp[1];
-			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
-
-			bindType = type;
-
-			if(type === 'mouseenter') {
-				namespaces.push('_mouseenter')
-				bindType = 'mouseover'
-			}
-			if(type === 'mouseleave') {
-				namespaces.push('_mouseleave')
-				bindType = 'mouseout'
-			}
-
-			if (!this._events) this._events = {};
-			if (!this._events[type]) this._events[type] = [];
-
-			var obj = {
-				delegateTarget: parent,
-				handleEvent: function (e) {
-					e = e || window.event;
-					e = fixEvent(e, data);
-					e.handleObj = this;
-
-					var args;
-
-					if(e.data && e.data.length) {
-						args = e.data.slice(0)
-						args.unshift(e);
-					} else {
-						args = [e];
-					}
-
-					if(!selector) {//usual addEventListener
-						handleFunction(e, args, type);
-					} else {//delegate listener
-						for (var k = 0, l = e.path.length; k < l ;k++) {
-							if(e.path[k] === parent) break;//don't check all dom
-							if(e.path[k] !== document && j.match(e.path[k], selector)) {
-								obj.el = e.path[k];
-
-								handleFunction(e, args, type);
-								break;//if we find needed el, don't need to check all other dom elements
-							}
-						}
-					}
-				}
-			}
-
-			obj.type = type;
-			obj.data = data;
-			obj.handler = fn;
-			obj.selector = selector;
-			obj.namespace = namespaces;
-
-
-			this._events[type].push(obj);
-
-			this.addEventListener(bindType, obj, false );
-		}
+		this.addEventListener( type, obj, false );
 	})
 }
 
-j.fn.one = function (types, selector, data, fn) {
-	this.on(types, selector, data, fn, 1);
+j.fn.delegate = function (selector, event, fn) {
+	return this.each(function (i) {
+		$(this).on(event, function (e) {
+			var target = e && e.target || window.event.srcElement;
+
+			if(j.match(target,selector)) {
+				fn.call(target, e);
+			}
+		})
+	})
 }
 
-//for off method we need j.inArray
-j.fn.off = function (types, fn) {
-	var events = types.split(' ');
-
+j.fn.off = function (type, fn) {
 	return this.each(function () {
-		var _events = this._events,
-			tmp,
-			type,
-			namespaces;
-		if (!_events) return;
-
-		for (var i = 0, l = events.length; i < l ;i++) {
-			tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
-			//detect current type
-			type = tmp[1];
-			//detect namespaces
-			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
-
-			var removeType = type;
-			if(type === 'mouseenter') {
-				namespaces.push('_mouseenter')
-				removeType = 'mouseover'
-			}
-
-			if(type === 'mouseleave') {
-				namespaces.push('_mouseleave')
-				removeType = 'mouseout'
-			}
-
-			if(type && _events[type]) {//we have type
-				if(namespaces.length) {//we have type and namespaces
-					removeListenerNamespace.call(this, type);
-				} else {//if we have type, but no namespaces
-					for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {
-						if(removeListener.call(this,type,k) === false) continue;
-					}
-				}
-				clearEvents(type);
-
-			} else {//no type
-				for (var ev in _events) {
-					if (_events.hasOwnProperty(ev)) {
-						removeListenerNamespace.call(this, ev);
-					}
-					clearEvents(ev);
-				}
-			}
-		}
-
-		function removeListenerNamespace(type) {
-			for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {//search on every handler of this type
-				for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
-					if(_events[type][k] && j.inArray(_events[type][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
-						if(removeListener.call(this,type,k) === false) continue;
-						break;
-					}
-				}
-			}
-		}
-
-		function removeListener(type, k) {
-			if(!fn || (fn && _events[type][k].handler === fn)) {
-				//remove listener
-				this.removeEventListener( removeType, _events[type][k], false );
-				//removeInfo from internal data
-				delete _events[type][k];
-			} else {
-				return false;
-			}
-		}
-
-		function clearEvents(type) {
-			//clear _events from undefined values
-			_events[type] = _events[type].filter(function(e){return e});
-			//remove empty sections
-			if(!_events[type].length) delete _events[type];
-		}
-
-		
-	});
+		this.removeEventListener( type, fn.handler, false );
+	})
 }
 
-
-//todo, change trigger methods, because of using old implementation
+//todo, make trigger for old ie
 j.fn.trigger = function (type, data) {
 	return this.each(function (i) {
 		var event = document.createEvent('HTMLEvents');
@@ -1037,7 +786,7 @@ j.fn.index =  function (selector) {
 		var el = this[0],
 			i = 0;
 		while ((el = el.previousSibling) !== null) {
-			if (el.nodeType === 1) i++;
+		    if (el.nodeType === 1) i++;
 		}
 		return i;
 	}
@@ -1073,10 +822,13 @@ j.fn._scroll = function (dir) {
 		var supportPageOffset = window.pageXOffset !== undefined;
 		var isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
 
+		var x = supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft;
+		var y = supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop;
+
 		if(dir === 'x') {
-			return supportPageOffset ? window.pageXOffset : isCSS1Compat ? document.documentElement.scrollLeft : document.body.scrollLeft;
+			return x;
 		} else if(dir === 'y') {
-			return supportPageOffset ? window.pageYOffset : isCSS1Compat ? document.documentElement.scrollTop : document.body.scrollTop;
+			return y;
 		}
 	} else {
 		if(dir === 'x') {
@@ -1095,42 +847,23 @@ j.fn.scrollLeft = function () {
 	return j.fn._scroll.call(this, 'x');
 }
 
-j.fn.outerWidth = function () {
-	return this[0].offsetWidth;
-};
-
-j.fn.outerHeight = function () {
-	return this[0].offsetHeight;	
+j.fn.transform = function (transform) {
+	return this.each(function () {
+		var elStyle = this.style;
+		elStyle.webkitTransform = elStyle.MsTransform = elStyle.msTransform = elStyle.MozTransform = elStyle.OTransform = elStyle.transform = transform;
+	})
 }
 
+j.fn.transition = function (duration) {
+	if (typeof duration !== 'string') {
+		duration = duration + 'ms';
+	}
 
-
-
-
-
-
-
-
-
-
-
-// j.fn.transform = function (transform) {
-// 	return this.each(function () {
-// 		var elStyle = this.style;
-// 		elStyle.webkitTransform = elStyle.MsTransform = elStyle.msTransform = elStyle.MozTransform = elStyle.OTransform = elStyle.transform = transform;
-// 	})
-// }
-
-// j.fn.transition = function (duration) {
-// 	if (typeof duration !== 'string') {
-// 		duration = duration + 'ms';
-// 	}
-
-// 	return this.each(function () {
-// 		var elStyle = this.style;
-// 		elStyle.webkitTransitionDuration = elStyle.MsTransitionDuration = elStyle.msTransitionDuration = elStyle.MozTransitionDuration = elStyle.OTransitionDuration = elStyle.transitionDuration = duration;
-// 	});
-// }
+	return this.each(function () {
+		var elStyle = this.style;
+		elStyle.webkitTransitionDuration = elStyle.MsTransitionDuration = elStyle.msTransitionDuration = elStyle.MozTransitionDuration = elStyle.OTransitionDuration = elStyle.transitionDuration = duration;
+	});
+}
 
 
 
