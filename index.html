@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Document</title>
+</head>
+<body>
+
+	// <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
+	<!-- // <script src='j.js'></script> -->
+	<div class="testWrap">
+		<p class="test">test</p>
+	</div>
+	<script>
+		// var test = $({}).on('click.test.test2', ['myData'], function () {
+		var p = $({});
+		p.on('click.test1', ['origData'], function (e) {
+			console.log('FUCKTHISSHIT - 1', arguments)
+		});
+		// $('.test').on('click.test2', function (e) {
+		// 	console.log('FUCKTHISSHIT - 2', arguments)
+		// 	// console.log('FUCKTHISSHIT', arguments)
+		// });
+		// $('.test').on('click.test3', function (e) {
+		// 	console.log('FUCKTHISSHIT - 3', arguments)
+		// 	// console.log('FUCKTHISSHIT', arguments)
+		// });
+		
+		// temp = test[0];
+
+		// console.log(temp._events)
+	</script>
+</body>
+</html>
