@@ -6,29 +6,42 @@
 </head>
 <body>
 
-	// <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
-	<!-- // <script src='j.js'></script> -->
+	<!-- // <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script> -->
+	// <script src='j.js'></script>
 	<div class="testWrap">
-		<p class="test">test</p>
+		<p class="test">gdfgdfgdfgfdgt<b>12<i>345</i>678</b>sdfgdgdfgdfgdf</p>
 	</div>
 	<script>
-		// var test = $({}).on('click.test.test2', ['myData'], function () {
-		var p = $({});
-		p.on('click.test1', ['origData'], function (e) {
-			console.log('FUCKTHISSHIT - 1', arguments)
-		});
-		// $('.test').on('click.test2', function (e) {
-		// 	console.log('FUCKTHISSHIT - 2', arguments)
-		// 	// console.log('FUCKTHISSHIT', arguments)
-		// });
-		// $('.test').on('click.test3', function (e) {
-		// 	console.log('FUCKTHISSHIT - 3', arguments)
-		// 	// console.log('FUCKTHISSHIT', arguments)
-		// });
-		
-		// temp = test[0];
+		// $('.test').on('click.test1', function (e) {
+		// 	console.log('click general', arguments)
+		// })
 
-		// console.log(temp._events)
+		// $('.test').on('click.test2', function (e) {
+		// 	console.log('click .test1.test2', arguments)
+		// })
+		// $('.test').on('mouseover.test1', function (e) {
+		// 	console.log('mouseover', arguments)
+		// })
+		// // $('.test').on('mouseenter.test1', function (e) {
+		// // 	console.log('mouseenter', arguments)
+		// // })
+
+		// $('.test').off('click.test1');
+
+		$('.test b').on('mouseenter', function () {
+			console.log('enter')
+		})
+		$('.test b').on('mouseover', function () {
+			console.log('over')
+		})
+		// $('.test b').off('mouseenter')
+
+
+		// setTimeout(function(){
+		// 	// $('.test').off('.test1');
+		// 	// $('.test').trigger('.test1');
+		// }, 100)
+		
 	</script>
 </body>
 </html>

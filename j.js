@@ -31,7 +31,7 @@
 			}
 		} else if(selector instanceof Array || selector instanceof NodeList || selector instanceof HTMLCollection || selector instanceof j) {
 			query = selector;
-		} else if((window.Node && selector instanceof Node) || selector == selector.window) {
+		} else if((window.Node && selector instanceof Node) || selector == selector.window || typeof selector === 'object') {
 			query = [selector];
 		} else if(typeof selector === 'function') {
 			query = [document];
@@ -733,51 +733,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 		return this;
 	}
 
-	function fixEvent(e, data) {
-		//add data
-		if(data) e.data = data;
-
-
-		//normalize relatedTarget
-		if (!e.relatedTarget) {
-			if (e.type == 'mouseover') e.relatedTarget = e.fromElement;
-			if (e.type == 'mouseout') e.relatedTarget = e.toElement;
-		}
-
-		//fix path
-		if(!e.path) {
-			e.path = [];
-			var node = e.target;
-			// while(node != document) {//check for document - fix for chrome, as chrome used native path that contain document el
-			while(node) {
-				e.path.push(node);
-				node = node.parentNode;
-			}
-		}
-
-		// Support: Safari 6.0+, Chrome<28
-		// Target should not be a text node (# 504, # 13143)
-		if ( e.target.nodeType === 3 ) {
-			e.target = e.target.parentNode;
-		}
-
-
-		//normalize which form jQuery
-		var	rkeyEvent = /^key/,
-			rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
-
-		if(rkeyEvent.test(e.type)) {//if this is key event
-			if (e.which == null) {
-				e.which = e.charCode != null ? e.charCode : e.keyCode;
-			}
-		} else if(rmouseEvent.test(e.type)) {//if this is mouse event
-			if (!e.which && e.button !== undefined ) {
-				e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
-			}
-		}
-
-		return e;
-	}
+	
 
 	var events = types.split(' ');
 	//todo доделать ивенты к любым объектам
@@ -790,26 +746,6 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 			bindType,
 			namespaces;
 
-
-		function handleFunction(e, args, type) {
-			if(type === 'mouseenter' || type === 'mouseleave') {
-				var related = e.relatedTarget,
-					parent = e.handleObj.el || e.handleObj.delegateTarget;
-
-				if(!related || (related !== parent && !parent.contains(related))) {
-					fire();
-				}
-			} else {
-				fire();
-			}
-
-			function fire() {
-				fn.apply(e.target, args);
-
-				if(one) $(parent).off(e.type, fn);
-			}
-		}
-
 		for (var i = 0, l = events.length; i < l ;i++) {
 			tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[i] ) || [];
 			type = tmp[1];
@@ -818,12 +754,12 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 			bindType = type;
 
 			if(type === 'mouseenter') {
+				bindType = 'mouseover';
 				namespaces.push('_mouseenter')
-				bindType = 'mouseover'
 			}
 			if(type === 'mouseleave') {
+				bindType = 'mouseout';
 				namespaces.push('_mouseleave')
-				bindType = 'mouseout'
 			}
 
 			if (!this._events) this._events = {};
@@ -833,29 +769,86 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				delegateTarget: parent,
 				handleEvent: function (e) {
 					e = e || window.event;
-					e = fixEvent(e, data);
+					e = function fixEvent(e, data) {
+						//add data
+						if(data) e.data = data;
+
+						//normalize relatedTarget
+						if (!e.relatedTarget) {
+							if (e.type == 'mouseover') e.relatedTarget = e.fromElement;
+							if (e.type == 'mouseout') e.relatedTarget = e.toElement;
+						}
+
+						//fix path
+						if(!e.path) {
+							e.path = [];
+							var node = e.target;
+							// while(node != document) {//check for document - fix for chrome, as chrome used native path that contain document el
+							while(node) {
+								e.path.push(node);
+								node = node.parentNode;
+							}
+						}
+
+						// Support: Safari 6.0+, Chrome<28
+						// Target should not be a text node (# 504, # 13143)
+						if ( e.target && e.target.nodeType === 3 ) {
+							e.target = e.target.parentNode;
+						}
+
+
+						//normalize which form jQuery
+						var	rkeyEvent = /^key/,
+							rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
+
+						if(rkeyEvent.test(e.type)) {//if this is key event
+							if (e.which == null) {
+								e.which = e.charCode != null ? e.charCode : e.keyCode;
+							}
+						} else if(rmouseEvent.test(e.type)) {//if this is mouse event
+							if (!e.which && e.button !== undefined ) {
+								e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
+							}
+						}
+
+						return e;
+					}(e, data);
+
 					e.handleObj = this;
 
-					var args;
 
-					if(e.data && e.data.length) {
-						args = e.data.slice(0)
-						args.unshift(e);
-					} else {
-						args = [e];
-					}
-
-					if(!selector) {//usual addEventListener
-						handleFunction(e, args, type);
+					if(!this.selector) {//usual addEventListener
+						handleFunction();
 					} else {//delegate listener
-						for (var k = 0, l = e.path.length; k < l ;k++) {
+						for (var k = 0, l2 = e.path.length; k < l2 ;k++) {
 							if(e.path[k] === parent) break;//don't check all dom
-							if(e.path[k] !== document && j.match(e.path[k], selector)) {
+							if(e.path[k] !== document && j.match(e.path[k], this.selector)) {
 								obj.el = e.path[k];
 
-								handleFunction(e, args, type);
+								handleFunction();
 								break;//if we find needed el, don't need to check all other dom elements
 							}
+						}
+					}
+					function handleFunction() {
+						var type = e.handleObj.type,
+							handler = e.handleObj.handler;
+
+						if(type === 'mouseenter' || type === 'mouseleave') {
+							var related = e.relatedTarget,
+								parent = e.handleObj.el || e.handleObj.delegateTarget;
+
+							if(!related || (related !== parent && !parent.contains(related))) {
+								fire();
+							}
+						} else {
+							fire();
+						}
+
+						function fire() {
+							handler.call(e.target, e);
+
+							if(one) $(parent).off(type, handler);
 						}
 					}
 				}
@@ -864,9 +857,9 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 			obj.type = type;
 			obj.data = data;
 			obj.handler = fn;
+
 			obj.selector = selector;
 			obj.namespace = namespaces;
-
 
 			this._events[type].push(obj);
 
@@ -881,6 +874,8 @@ j.fn.one = function (types, selector, data, fn) {
 
 //for off method we need j.inArray
 j.fn.off = function (types, fn) {
+	types = types || '';
+
 	var events = types.split(' ');
 
 	return this.each(function () {
@@ -896,7 +891,72 @@ j.fn.off = function (types, fn) {
 			type = tmp[1];
 			//detect namespaces
 			tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+			//clear namespaces from duplicates
+			namespaces = namespaces.filter (function (v, i, a) { return a.indexOf (v) == i });
 
+			
+
+
+			if(type) {//we have type
+				if(!_events[type] || !_events[type].length) return;//we have no handlers with this type
+
+				if(namespaces.length) {//we have type and namespaces
+					for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
+						if(namespaces.length > 1) {
+							var re = new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
+								handler_namespaces = _events[type][i2].namespace.join('.');
+
+							if(re.test(handler_namespaces)) {
+								removeListener.call(this,type,i2)
+							}
+						} else {
+							if(j.inArray(_events[type][i2].namespace, namespaces[0]) !== -1) {
+								removeListener.call(this,type,i2)
+							}
+
+						}
+					}
+				} else {//if we have type, but no namespaces
+					for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
+						removeListener.call(this,type,i2)
+					}
+				}
+				clearEvents(type);
+			} else {//no type
+				if(namespaces.length) {//we have no type, but have namespaces
+					for (var type in _events) {
+						if (_events.hasOwnProperty(type)) {
+							for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
+								if(namespaces.length > 1) {
+									var re = new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
+										handler_namespaces = _events[type][i2].namespace.join('.');
+
+									if(re.test(handler_namespaces)) {
+										removeListener.call(this,type,i2)
+									}
+								} else {
+									if(j.inArray(_events[type][i2].namespace, namespaces[0]) !== -1) {
+										removeListener.call(this,type,i2)
+									}
+
+								}
+							}
+						}
+					}
+				} else {//we have no type and no namespaces, remove all
+					for (var type in _events) {
+						if (_events.hasOwnProperty(type)) {
+							for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
+								removeListener.call(this,type,i2)
+							}
+						}
+					}
+				}
+				clearEvents();
+			}
+		}
+
+		function removeListener(type, k) {
 			var removeType = type;
 			if(type === 'mouseenter') {
 				namespaces.push('_mouseenter')
@@ -908,38 +968,7 @@ j.fn.off = function (types, fn) {
 				removeType = 'mouseout'
 			}
 
-			if(type && _events[type]) {//we have type
-				if(namespaces.length) {//we have type and namespaces
-					removeListenerNamespace.call(this, type);
-				} else {//if we have type, but no namespaces
-					for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {
-						if(removeListener.call(this,type,k) === false) continue;
-					}
-				}
-				clearEvents(type);
 
-			} else {//no type
-				for (var ev in _events) {
-					if (_events.hasOwnProperty(ev)) {
-						removeListenerNamespace.call(this, ev);
-					}
-					clearEvents(ev);
-				}
-			}
-		}
-
-		function removeListenerNamespace(type) {
-			for (var k = 0, l2 = _events[type].length; k < l2 ;k++) {//search on every handler of this type
-				for (var m = 0, l3 = namespaces.length; m < l3 ;m++) {//search every namespace
-					if(_events[type][k] && j.inArray(_events[type][k].namespace, namespaces[m]) !== -1) {//if this handler have this namespace
-						if(removeListener.call(this,type,k) === false) continue;
-						break;
-					}
-				}
-			}
-		}
-
-		function removeListener(type, k) {
 			if(!fn || (fn && _events[type][k].handler === fn)) {
 				//remove listener
 				this.removeEventListener( removeType, _events[type][k], false );
@@ -951,39 +980,66 @@ j.fn.off = function (types, fn) {
 		}
 
 		function clearEvents(type) {
-			//clear _events from undefined values
-			_events[type] = _events[type].filter(function(e){return e});
-			//remove empty sections
-			if(!_events[type].length) delete _events[type];
+			if(type) {
+				//clear _events from undefined values
+				_events[type] = _events[type].filter(function(e){return e});
+				//remove empty sections
+				if(!_events[type].length) delete _events[type];
+			} else {
+				for (var key in _events) {
+					if (_events.hasOwnProperty(key)) {
+						//clear _events from undefined values
+						_events[key] = _events[key].filter(function(e){return e});
+						//remove empty sections
+						if(!_events[key].length) delete _events[key];
+					}
+				}
+			}
 		}
 
-		
 	});
 }
 
 
-//todo, change trigger methods, because of using old implementation
+
+
+//using old implementation, because of ie...
 j.fn.trigger = function (type, data) {
 	return this.each(function (i) {
 		var event = document.createEvent('HTMLEvents');
 		event.initEvent(type, true, true);
-		event.data = data || [];
-		event.eventName = type;
+		// event.data = data || [];
+		// event.eventName = type;
 		event.target = this;
 		this.dispatchEvent(event);
-		// return this;
 	})
 }
 
-j.fn.triggerHandler = function (type, data) {
-	var event = document.createEvent('HTMLEvents');
-	event.initEvent(type, false, true);
-	event.data = data || [];
-	event.eventName = type;
-	event.target = this[0];
-	this[0].dispatchEvent(event);
-	return this;
-}
+
+
+
+// //todo, change trigger methods, because of using old implementation
+// j.fn.trigger = function (type, data) {
+// 	return this.each(function (i) {
+// 		var event = document.createEvent('HTMLEvents');
+// 		event.initEvent(type, true, true);
+// 		event.data = data || [];
+// 		event.eventName = type;
+// 		event.target = this;
+// 		this.dispatchEvent(event);
+// 		// return this;
+// 	})
+// }
+
+// j.fn.triggerHandler = function (type, data) {
+// 	var event = document.createEvent('HTMLEvents');
+// 	event.initEvent(type, false, true);
+// 	event.data = data || [];
+// 	event.eventName = type;
+// 	event.target = this[0];
+// 	this[0].dispatchEvent(event);
+// 	return this;
+// }
 
 
 
