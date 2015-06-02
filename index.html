@@ -6,19 +6,20 @@
 </head>
 <body>
 
-	<!-- // <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script> -->
-	// <script src='j.js'></script>
+	// <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
+	<!-- // <script src='j.js'></script> -->
 	<div class="testWrap">
 		<p class="test">gdfgdfgdfgfdgt<b>12<i>345</i>678</b>sdfgdgdfgdfgdf</p>
 	</div>
 	<script>
-		// $('.test').on('click.test1', function (e) {
-		// 	console.log('click general', arguments)
-		// })
+		$('.test').on('click', function (e) {
+			console.log('click general', e.handleObj)
+		})
 
-		// $('.test').on('click.test2', function (e) {
-		// 	console.log('click .test1.test2', arguments)
-		// })
+		$('.test').on('click.test1.test2', function (e) {
+			console.log('click.test1.test2', e.handleObj)
+		})
+
 		// $('.test').on('mouseover.test1', function (e) {
 		// 	console.log('mouseover', arguments)
 		// })
@@ -26,22 +27,16 @@
 		// // 	console.log('mouseenter', arguments)
 		// // })
 
-		// $('.test').off('click.test1');
+		$('.test').trigger('click', ['triggerData','triggerData2']);
+		// $('.test').trigger('click.test1.test2');
 
-		$('.test b').on('mouseenter', function () {
-			console.log('enter')
-		})
-		$('.test b').on('mouseover', function () {
-			console.log('over')
-		})
-		// $('.test b').off('mouseenter')
+		
 
 
 		// setTimeout(function(){
 		// 	// $('.test').off('.test1');
 		// 	// $('.test').trigger('.test1');
 		// }, 100)
-		
 	</script>
 </body>
 </html>

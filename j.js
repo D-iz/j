@@ -769,9 +769,9 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 				delegateTarget: parent,
 				handleEvent: function (e) {
 					e = e || window.event;
-					e = function fixEvent(e, data) {
-						//add data
-						if(data) e.data = data;
+
+					e = function fixEvent(e) {
+						e.data = data;
 
 						//normalize relatedTarget
 						if (!e.relatedTarget) {
@@ -812,10 +812,9 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 						}
 
 						return e;
-					}(e, data);
+					}(e);
 
 					e.handleObj = this;
-
 
 					if(!this.selector) {//usual addEventListener
 						handleFunction();
@@ -830,6 +829,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 							}
 						}
 					}
+
 					function handleFunction() {
 						var type = e.handleObj.type,
 							handler = e.handleObj.handler;
@@ -846,9 +846,40 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 						}
 
 						function fire() {
-							handler.call(e.target, e);
+							var args;
 
-							if(one) $(parent).off(type, handler);
+							//add trigger data to argument when calling handler
+							if(e.triggerData && e.triggerData.length) {
+								args = e.triggerData.slice(0)
+								args.unshift(e);
+								delete e.triggerData;
+							} else {
+								args = [e];
+							}
+
+							//handle namespacing while calling handler
+							if(e.triggerNamespace && e.triggerNamespace.length) {
+								if(e.triggerNamespace.length > 1) {
+									var re = new RegExp( "(^|\\.)" + e.triggerNamespace.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
+										handler_namespaces = e.handleObj.namespace.join('.');
+
+									if(re.test(handler_namespaces)) {
+										handler.apply(e.target, args);
+
+										if(one) $(parent).off(type, handler);
+									}
+								} else {
+									if(j.inArray(e.handleObj.namespace, e.triggerNamespace[0]) !== -1) {
+										handler.apply(e.target, args);
+
+										if(one) $(parent).off(type, handler);
+									}
+								}
+							} else {
+								handler.apply(e.target, args);
+
+								if(one) $(parent).off(type, handler);
+							}
 						}
 					}
 				}
@@ -901,21 +932,7 @@ j.fn.off = function (types, fn) {
 				if(!_events[type] || !_events[type].length) return;//we have no handlers with this type
 
 				if(namespaces.length) {//we have type and namespaces
-					for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
-						if(namespaces.length > 1) {
-							var re = new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
-								handler_namespaces = _events[type][i2].namespace.join('.');
-
-							if(re.test(handler_namespaces)) {
-								removeListener.call(this,type,i2)
-							}
-						} else {
-							if(j.inArray(_events[type][i2].namespace, namespaces[0]) !== -1) {
-								removeListener.call(this,type,i2)
-							}
-
-						}
-					}
+					removeNamespacedListener.call(this);//search on every handler of this type
 				} else {//if we have type, but no namespaces
 					for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
 						removeListener.call(this,type,i2)
@@ -926,21 +943,7 @@ j.fn.off = function (types, fn) {
 				if(namespaces.length) {//we have no type, but have namespaces
 					for (var type in _events) {
 						if (_events.hasOwnProperty(type)) {
-							for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
-								if(namespaces.length > 1) {
-									var re = new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
-										handler_namespaces = _events[type][i2].namespace.join('.');
-
-									if(re.test(handler_namespaces)) {
-										removeListener.call(this,type,i2)
-									}
-								} else {
-									if(j.inArray(_events[type][i2].namespace, namespaces[0]) !== -1) {
-										removeListener.call(this,type,i2)
-									}
-
-								}
-							}
+							removeNamespacedListener.call(this);//search on every handler of this type
 						}
 					}
 				} else {//we have no type and no namespaces, remove all
@@ -953,6 +956,24 @@ j.fn.off = function (types, fn) {
 					}
 				}
 				clearEvents();
+			}
+		}
+
+		function removeNamespacedListener() {
+			for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
+				if(namespaces.length > 1) {
+					var re = new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
+						handler_namespaces = _events[type][i2].namespace.join('.');
+
+					if(re.test(handler_namespaces)) {
+						removeListener.call(this,type,i2)
+					}
+				} else {
+					if(j.inArray(_events[type][i2].namespace, namespaces[0]) !== -1) {
+						removeListener.call(this,type,i2)
+					}
+
+				}
 			}
 		}
 
@@ -1002,16 +1023,35 @@ j.fn.off = function (types, fn) {
 
 
 
+//for now trigger and triggerHandler are same method...
+//using old implementation of events, because of ie...
+j.fn.trigger = j.fn.triggerHandler = function (types, triggerData) {
+	var events = types.split(' ');
 
-//using old implementation, because of ie...
-j.fn.trigger = function (type, data) {
+	if(events.length > 1) return;//don't handle triggering multiple events
+
 	return this.each(function (i) {
-		var event = document.createEvent('HTMLEvents');
-		event.initEvent(type, true, true);
-		// event.data = data || [];
-		// event.eventName = type;
-		event.target = this;
-		this.dispatchEvent(event);
+		var event = document.createEvent('HTMLEvents'),
+			tmp,
+			type,
+			namespaces;
+
+		tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[0] ) || [];
+		type = tmp[1];
+		tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+
+
+		if(type) {
+			event.initEvent(type, true, true);
+			event.eventName = type;
+			if(triggerData) event.triggerData = triggerData;
+			if(namespaces.length) event.triggerNamespace = namespaces;
+
+			event.target = this;
+			this.dispatchEvent(event);
+		} else {//don't trigger events only with namespace
+			return;
+		}
 	})
 }
 
