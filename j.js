@@ -7,6 +7,7 @@
 	if(!window.$) window.$ = window.j;
 
 	j.match = function (el, selector) {
+		if(el === document) el = document.documentElement;
 		var matchesSelector = el.matches 
 				|| el.matchesSelector
 				|| el.oMatchesSelector 
@@ -396,6 +397,7 @@ j.fn.closest = function (selector) {
 			closestArr.push(this[i])
 		} else {
 			parent = this[i].parentNode;
+			if(parent === document) parent = document.documentElement;
 			while( parent.tagName !== 'HTML') {
 				if(j.match(parent, selector) && j.inArray(closestArr, parent) === -1) closestArr.push(parent);
 				parent = parent.parentNode;
