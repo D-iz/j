@@ -913,6 +913,7 @@ j.fn.off = function (types, fn) {
 
 	return this.each(function () {
 		var _events = this._events,
+			that = this,
 			tmp,
 			type,
 			namespaces;
@@ -960,8 +961,12 @@ j.fn.off = function (types, fn) {
 				clearEvents();
 			}
 		}
+		
+
 
 		function removeNamespacedListener() {
+			
+
 			for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
 				if(namespaces.length > 1) {
 					var re = new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
@@ -982,12 +987,10 @@ j.fn.off = function (types, fn) {
 		function removeListener(type, k) {
 			var removeType = type;
 			if(type === 'mouseenter') {
-				namespaces.push('_mouseenter')
 				removeType = 'mouseover'
 			}
 
 			if(type === 'mouseleave') {
-				namespaces.push('_mouseleave')
 				removeType = 'mouseout'
 			}
 
@@ -1018,6 +1021,16 @@ j.fn.off = function (types, fn) {
 					}
 				}
 			}
+
+			//delete _events object form dom element if there are no events
+			var emptyEvents = true;
+			for (var prop in _events) {
+				if(_events.hasOwnProperty(prop)) {
+				    emptyEvents = false;
+					break;
+				}
+			}
+			if(emptyEvents) delete that._events;
 		}
 
 	});
