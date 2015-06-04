@@ -1040,7 +1040,7 @@ j.fn.off = function (types, fn) {
 
 //for now trigger and triggerHandler are same method...
 //using old implementation of events, because of ie...
-j.fn.trigger = j.fn.triggerHandler = function (types, triggerData) {
+j.fn.trigger = function (types, triggerData) {
 	var events = types.split(' ');
 
 	if(events.length > 1) return;//don't handle triggering multiple events
@@ -1069,7 +1069,38 @@ j.fn.trigger = j.fn.triggerHandler = function (types, triggerData) {
 		}
 	})
 }
+j.fn.triggerHandler = function (types, triggerData) {
+	var events = types.split(' ');
 
+	if(events.length > 1) return;//don't handle triggering multiple events
+
+	var el = this[0];
+
+	var event = document.createEvent('HTMLEvents'),
+		tmp,
+		type,
+		namespaces;
+
+	tmp = /^([^.]*)(?:\.(.+)|)$/.exec( events[0] ) || [];
+	type = tmp[1];
+	tmp[2] ? namespaces = ( tmp[2] ).split( "." ).sort() : namespaces = [];
+
+
+	if(type) {
+		event.initEvent(type, false, true);
+		event.eventName = type;
+		if(triggerData) event.triggerData = triggerData;
+		if(namespaces.length) event.triggerNamespace = namespaces;
+
+		event.target = el;
+		el.dispatchEvent(event);
+	} else {//don't trigger events only with namespace
+		return;
+	}
+	
+
+	return undefined;
+}
 
 
 
