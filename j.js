@@ -199,6 +199,11 @@ j.inArray = function (arr, el) {
 	return -1;
 }
 
+//json wrapper
+j.parseJSON = function (json) {
+	return JSON.parse(json);
+}
+
 
 //document ready event
 j.fn.ready = function (fn) {
@@ -446,7 +451,7 @@ j.fn._insert = function (content, clone, type) {
 		if(j.fn.clone && clone) els = j(content).clone();
 
 
-		//insert all elements in fragment, because prepend method insert elements reversed, aand also for perfomance
+		//insert all elements in fragment, because prepend method insert elements reversed, and also for perfomance
 		els.each(function () {
 			frag.appendChild( this );
 		});
