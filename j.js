@@ -281,7 +281,7 @@ j.fn.css = function (prop, value) {
 }
 
 j.fn.html = function (html) {
-	if(html) {
+	if(html || typeof html === 'string') {
 		return this.each(function () {
 			this.innerHTML = html;
 		})
@@ -970,8 +970,6 @@ j.fn.off = function (types, fn) {
 
 
 		function removeNamespacedListener() {
-			
-
 			for (var i2 = 0, l2 = _events[type].length; i2 < l2; i2++) {//search on every handler of this type
 				if(namespaces.length > 1) {
 					var re = new RegExp( "(^|\\.)" + namespaces.join("\\.(?:.*\\.|)") + "(\\.|$)" ),
