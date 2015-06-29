@@ -262,20 +262,51 @@ j.fn.removeAttr = function (name) {
 
 //Get the value of a style property for the first element in the set of matched elements or set one CSS property for every matched element.
 j.fn.css = function (prop, value) {
+	var that = this;
+
+	function prefixed(prop) {//select proper prefix
+		var vendorProp, 
+			supportedProp,
+			prefix,	
+			prefixes = ["Webkit", "Moz", "O", "ms"],
+			capProp = prop.charAt(0).toUpperCase() + prop.slice(1),// Capitalize first character of the prop to test vendor prefix
+			div = that[0];		
+
+		if(prop in div.style) {
+			supportedProp = prop;// Browser supports standard CSS property name
+		} else {
+			for (var i = 0; i < prefixes.length; i++) {// Otherwise test support for vendor-prefixed property names
+				vendorProp = prefixes[i] + capProp;
+
+				if (vendorProp in div.style) {
+					prefix = prefixes[i];
+					supportedProp = vendorProp;
+					break;
+				} else {
+					vendorProp = undefined;
+				}
+
+			}
+		}
+
+
+		return supportedProp;
+	}
+
+
 	if(typeof prop === 'object') {
 		return this.each(function () {
 			for (var key in prop) {
-				this.style[key] = prop[key];
+				this.style[prefixed(key)] = prop[key];
 			}
 		})
 	} else {
 		if(value) {
 			return this.each(function () {
-				this.style[prop] = value;
+				this.style[prefixed(prop)] = value;
 			});
 		} else {
-			// r = (window.getComputedStyle ? getComputedStyle(this, '')[prop] : this.currentStyle[prop]) || undefined;
-			return getComputedStyle(this[0], null)[prop] || undefined;
+			return getComputedStyle(this[0], null)[prefixed(prop)] || undefined;
 		}
 	}
 }
