@@ -8,6 +8,7 @@
 
 	j.match = function (el, selector) {
 		if(el === document) el = document.documentElement;
+
 		var matchesSelector = el.matches 
 				|| el.matchesSelector
 				|| el.oMatchesSelector 
@@ -858,6 +859,7 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 						handleFunction();
 					} else {//delegate listener
 						for (var k = 0, l2 = e.path.length; k < l2 ;k++) {
+							if(e.path[k].toString() === '[object ShadowRoot]') continue;
 							if(e.path[k] === parent) break;//don't check all dom
 							if(e.path[k] !== document && j.match(e.path[k], this.selector)) {
 								obj.el = e.path[k];
