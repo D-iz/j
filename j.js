@@ -406,6 +406,19 @@ j.fn.find = function (selector) {
 	return j(newArray);
 }
 
+//required .is
+//filter by selector
+j.fn.filter = function (selector) {
+	var newArray = [];
+
+	this.each(function (i, el) {
+		if(j.match(el, selector)) {
+			newArray.push(el);
+		}
+	})
+	return j(newArray);
+}
+
 j.fn.children = function (selector) {
 	var newArray = [];
 
