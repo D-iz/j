@@ -264,6 +264,9 @@ j.fn.removeAttr = function (name) {
 //Get the value of a style property for the first element in the set of matched elements or set one CSS property for every matched element.
 j.fn.css = function (prop, value) {
 	var that = this;
+	if(!prop) return;
+	
+	if (prop == 'float') prop = 'styleFloat';
 
 	function prefixed(prop) {//select proper prefix
 		var vendorProp, 
@@ -435,7 +438,8 @@ j.fn.closest = function (selector) {
 		} else {
 			parent = this[i].parentNode;
 			if(parent === document) parent = document.documentElement;
-			while( parent.tagName !== 'HTML') {
+
+			while(parent && parent.tagName !== 'HTML') {
 				if(j.match(parent, selector) && j.inArray(closestArr, parent) === -1) closestArr.push(parent);
 				parent = parent.parentNode;
 			}
@@ -904,21 +908,24 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 										handler_namespaces = e.handleObj.namespace.join('.');
 
 									if(re.test(handler_namespaces)) {
-										handler.apply(e.target, args);
+										//was e.target
+										handler.apply(e.handleObj.delegateTarget, args);
 
 										if(one) $(parent).off(type, handler);
 									}
 								} else {
 									if(j.inArray(e.handleObj.namespace, e.triggerNamespace[0]) !== -1) {
-										handler.apply(e.target, args);
+										handler.apply(e.handleObj.delegateTarget, args);
 
 										if(one) $(parent).off(type, handler);
 									}
 								}
 							} else {
-								handler.apply(e.target, args);
+								handler.apply(e.handleObj.delegateTarget, args);
 
-								if(one) $(parent).off(type, handler);
+								if(one) {
+									$(parent).off(type, handler);
+								}
 							}
 						}
 					}
