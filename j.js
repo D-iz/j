@@ -868,13 +868,13 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 							if(e.path[k] !== document && j.match(e.path[k], this.selector)) {
 								obj.el = e.path[k];
 
-								handleFunction();
+								handleFunction(true);
 								break;//if we find needed el, don't need to check all other dom elements
 							}
 						}
 					}
 
-					function handleFunction() {
+					function handleFunction(delegate) {
 						var type = e.handleObj.type,
 							handler = e.handleObj.handler;
 
@@ -901,6 +901,12 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 								args = [e];
 							}
 
+							if(delegate) {
+								var thisEl = e.handleObj.el;
+							} else {
+								var thisEl = e.handleObj.delegateTarget;
+							}
+
 							//handle namespacing while calling handler
 							if(e.triggerNamespace && e.triggerNamespace.length) {
 								if(e.triggerNamespace.length > 1) {
@@ -908,20 +914,19 @@ j.fn.on = function (types, selector, data, fn, one) {//one - internal
 										handler_namespaces = e.handleObj.namespace.join('.');
 
 									if(re.test(handler_namespaces)) {
-										//was e.target
-										handler.apply(e.handleObj.delegateTarget, args);
+										handler.apply(thisEl, args);
 
 										if(one) $(parent).off(type, handler);
 									}
 								} else {
 									if(j.inArray(e.handleObj.namespace, e.triggerNamespace[0]) !== -1) {
-										handler.apply(e.handleObj.delegateTarget, args);
+										handler.apply(thisEl, args);
 
 										if(one) $(parent).off(type, handler);
 									}
 								}
 							} else {
-								handler.apply(e.handleObj.delegateTarget, args);
+								handler.apply(thisEl, args);
 
 								if(one) {
 									$(parent).off(type, handler);
