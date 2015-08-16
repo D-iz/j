@@ -316,7 +316,7 @@ j.fn.css = function (prop, value) {
 }
 
 j.fn.html = function (html) {
-	if(html || typeof html === 'string') {
+	if(typeof html === 'number' || typeof html === 'string') {
 		return this.each(function () {
 			this.innerHTML = html;
 		})
@@ -407,15 +407,24 @@ j.fn.find = function (selector) {
 }
 
 //required .is
-//filter by selector
+//filter by selector or function
 j.fn.filter = function (selector) {
 	var newArray = [];
 
-	this.each(function (i, el) {
-		if(j.match(el, selector)) {
-			newArray.push(el);
-		}
-	})
+	if(typeof selector === 'string') {
+		this.each(function (i, el) {
+			if(j.match(el, selector)) {
+				newArray.push(el);
+			}
+		})
+	} else if(typeof selector === 'function') {
+		this.each(function (i, el) {
+			if(selector.call(this, i, el) === true) {
+				newArray.push(el);
+			}
+		})
+	}
+
 	return j(newArray);
 }
 
@@ -666,9 +675,13 @@ j.fn.addClass = function (classes) {
 		});
 	} else {//for ie9
 		this.each(function () {
+
 			for (var i = 0, l = arr.length; i < l ;i++) {
-				this.className += ' '+arr[i];
+				if(this.className.indexOf(arr[i]) === -1) {
+					this.className += ' '+arr[i];
+				}
 			}
+
 		})
 	}
 	return this;
@@ -1194,8 +1207,14 @@ j.fn.triggerHandler = function (types, triggerData) {
 
 
 
-
-
+//remove all children
+j.fn.empty = function () {
+	return this.each(function () {
+		while (this.firstChild) {
+		    this.removeChild(this.firstChild);
+		}
+	})
+}
 
 j.fn.val = function (value) {
 	if(value) {
