@@ -675,11 +675,14 @@ j.fn.addClass = function (classes) {
 		});
 	} else {//for ie9
 		this.each(function () {
+			var curClasses = " " + this.className + " ".replace( /[\t\r\n\f]/g, " " );
 
 			for (var i = 0, l = arr.length; i < l ;i++) {
-				if(this.className.indexOf(arr[i]) === -1) {
+
+				if(curClasses.indexOf(' ' + arr[i] + ' ') === -1) {
 					this.className += ' '+arr[i];
 				}
+
 			}
 
 		})
